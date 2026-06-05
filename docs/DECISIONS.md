@@ -151,3 +151,31 @@ Consequences: the domain layer is framework-free and unit-tested (51 tests),
 ready for Phase 2 to build the viewport on top. One tooling addition: ESLint 10
 needs `jiti` to load the TypeScript `eslint.config.ts`, so `jiti` is now an
 explicit devDependency (it had been resolving only transitively).
+
+## ADR-0009: Phase 2 viewport and state
+
+Date: 2026-06-06. Status: accepted.
+
+Context: Phase 2 introduces the Three.js viewport and the Vue UI, and had to
+settle the reactive-layer choice deferred in ADR-0002.
+
+Decision:
+
+- State: plain Vue composables, not Pinia. A `createEditorStore` factory holds
+  one reactive `Project` plus mutations; no extra dependency, and the domain
+  layer stays framework-free. The store is unit-tested directly.
+- The viewport is a framework-agnostic `Viewport` controller (no Vue imports);
+  the Vue component drives it via `syncModules` / `setSelected` / `setGizmoMode`
+  and receives `onSelect` / `onTransform` callbacks. This keeps Three.js out of
+  the components and the domain out of Three.js.
+- The viewport works Z-up (camera up = +Z) so domain `Mat4`s map directly; the
+  grid is rotated into the XY plane. Module transforms decompose onto the proxy
+  group so TransformControls can drive them, and recompose back to a `Mat4`.
+- Proxies are derived generically from a module's domain ports (a hub, a tube arm
+  per port, a colored male/female marker), so no per-type proxy code is needed.
+
+Consequences: editing is decoupled from real geometry (ADR-0002 holds). Two type
+dependencies were added: `@types/three` (Three.js 0.184 does not bundle its own
+types) pinned to the matching `0.184.x` line, and the existing `jiti`. The
+production bundle is large (~640 KB, mostly Three.js); code-splitting/lazy-loading
+is deferred (the geometry wasm in Phase 4 will force the issue anyway).

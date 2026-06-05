@@ -30,6 +30,9 @@ CLAUDE.md
 .vite
 *.tsbuildinfo
 
+# Playwright verification artifacts
+.playwright-mcp
+
 # OS
 Thumbs.db
 

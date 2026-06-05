@@ -36,7 +36,7 @@ Done (built test-first): `src/domain/` holds `math.ts` (column-major Mat4),
 from `src/domain/index.ts`. 51 unit tests; type-check, lint, test, and build all
 green.
 
-## Phase 2: viewport and placement [ ]
+## Phase 2: viewport and placement [x]
 
 Three.js scene with proxy meshes for each module (the `proxy` part of the module
 definition), a ground/cage reference, OrbitControls, selection via raycasting,
@@ -47,6 +47,14 @@ No snapping yet, no real geometry. Proxies only.
 
 Testable objective: a user can add, select, move, rotate, and delete modules;
 the underlying `Project` graph stays in sync and re-serializes correctly.
+
+Done: `src/stores/editor.ts` (reactive store bridging the domain graph, unit
+tested), `src/viewport/` (a framework-agnostic Three.js controller plus
+port-derived proxy meshes), and `src/ui/` (ViewportCanvas, ModulePalette,
+ModuleInspector) wired into `App.vue`. The viewport runs Z-up. Verified in a real
+browser (Playwright): add, select with gizmo, Move/Rotate, delete, with the live
+validation report reacting (a disconnected graph shows as a warning). 59 unit
+tests; type-check, lint, build all green. See DECISIONS.md ADR-0009.
 
 ## Phase 3: port snapping [ ]
 
