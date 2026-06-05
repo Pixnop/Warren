@@ -123,3 +123,31 @@ config. Resolved by setting `noEmit` on the node tsconfig, dropping the `lib: []
 override in the vitest tsconfig, adding `@types/node` (pinned to the Node 22
 line), and giving `eslint.config.ts` an explicit `ConfigArray` annotation. All
 checks pass. Re-evaluate versions before Phase 4.
+
+## ADR-0008: Phase 1 domain core shape
+
+Date: 2026-06-06. Status: accepted.
+
+Context: implementing the data model and graph (Phase 1) raised the open
+questions flagged in [DATA_MODEL.md](./DATA_MODEL.md).
+
+Decision:
+
+- `ModuleParameters` stays an open record (`Record<string, number | string |
+boolean>`) in the graph core. Per-type validation lives in the module
+  library's `ParamSchema` (number with min/max, boolean, enum), so the core does
+  not hard-depend on every type's schema.
+- `Connection` stays minimal (`id`, `a`, `b`). Rotational clocking is derived
+  geometry, not stored; it is enforced by construction in the editor (Phase 3)
+  and by the geometric-coincidence invariant, not persisted.
+- All matrix conventions live in one module (`src/domain/math.ts`): column-major
+  Mat4 matching THREE.Matrix4.elements, port local +Z outward.
+- `validateProject` returns a structured report splitting errors (invalidating)
+  from warnings (for example a disconnected graph is a warning, not an error).
+- Serialization is JSON of the `Project` tree with a `runMigrations` seam keyed
+  by from-version; empty until a v2 schema exists.
+
+Consequences: the domain layer is framework-free and unit-tested (51 tests),
+ready for Phase 2 to build the viewport on top. One tooling addition: ESLint 10
+needs `jiti` to load the TypeScript `eslint.config.ts`, so `jiti` is now an
+explicit devDependency (it had been resolving only transitively).

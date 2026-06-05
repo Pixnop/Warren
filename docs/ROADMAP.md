@@ -15,7 +15,7 @@ openscad-wasm and manifold-3d documented. No application code.
 Done when: `pnpm install`, `pnpm type-check`, `pnpm lint:check`, `pnpm test`,
 and `pnpm build` all pass on a clean checkout. (Verified at scaffold time.)
 
-## Phase 1: data model and graph [ ]
+## Phase 1: data model and graph [x]
 
 Implement the domain core from [DATA_MODEL.md](./DATA_MODEL.md): `Vec3`, `Mat4`,
 `Port`, `Module`, `Connection`, `Project`, the module library's `schema` and
@@ -27,6 +27,14 @@ No Vue, no Three.js. Pure TypeScript, exhaustively unit-tested.
 Testable objective: given hand-written project JSON, `validate` returns exactly
 the right structured errors for each broken invariant, and round-tripping a
 valid project through serialize/deserialize is identity.
+
+Done (built test-first): `src/domain/` holds `math.ts` (column-major Mat4),
+`types.ts`, the module library (`modules/schema.ts`, `modules/definition.ts`,
+`modules/definitions.ts`, `modules/registry.ts` with all seven types),
+`validate.ts` (`validateProject` covering invariants 1 to 7), and `serialize.ts`
+(serialize/deserialize plus a `runMigrations` hook). Public surface re-exported
+from `src/domain/index.ts`. 51 unit tests; type-check, lint, test, and build all
+green.
 
 ## Phase 2: viewport and placement [ ]
 
