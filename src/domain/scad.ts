@@ -34,7 +34,9 @@ export const DEFAULT_CONNECTOR: ConnectorSpec = {
   clearance: 0.2,
   engagement: 12,
   sleeveWall: 1.6,
-  facets: 64,
+  // Smoothness of curved surfaces. Overridable per call so the editor can use a
+  // lower count for a quick preview and a higher one for export.
+  facets: 96,
 }
 
 const fmt = (x: number): string => String(Number(x.toFixed(3)))

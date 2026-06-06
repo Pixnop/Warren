@@ -86,11 +86,13 @@ The domain layer is deliberately the largest and the most thoroughly tested.
    standard connector pair is added so the sub-parts rejoin after printing.
    `manifold-3d` `splitByPlane` / `trimByPlane` are the candidate primitives
    (see [research/manifold-3d.md](./research/manifold-3d.md)).
-5. Emit one STL per printable part plus an assembly manifest: a JSON (and
-   human-readable) description of which parts connect to which, in what order,
-   with which connector, and any orientation/keying notes.
-6. Package: a downloadable bundle (STLs + manifest). The project JSON itself is
-   separately saveable/loadable at any time.
+5. Emit a single 3MF holding every printable part with its assembly position, a
+   per-part color, and the assembly manifest (which parts connect to which, in
+   what order, with which connector, and any orientation/keying notes) in
+   metadata. A fallback multi-STL export stays available. See DECISIONS.md
+   ADR-0012.
+6. Package: a downloadable bundle (the 3MF, or STLs + a JSON manifest for the
+   fallback). The project JSON itself is separately saveable/loadable at any time.
 
 Phases 4 to 6 in [ROADMAP.md](./ROADMAP.md) build this pipeline incrementally.
 

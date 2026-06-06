@@ -239,3 +239,33 @@ for straight and tee). Deferred: routing geometry through manifold-3d for
 validation and richer interop (Phase 5/6 need it for booleans and auto-split
 anyway); per-type geometry refinement (platform and cage_mount currently use the
 generic arm/hub model); and coupon-validating the connector clearance on the P1S.
+
+## ADR-0012: 3MF as the export format
+
+Date: 2026-06-06. Status: accepted.
+
+Context: the export was originally framed as one STL per part plus a separate
+JSON manifest. STL is a unitless triangle soup with no metadata and one object
+per file, which fits a multi-part assembly poorly.
+
+Decision: target 3MF for the Phase 6 export. A single 3MF carries every printable
+part with its assembly position, a per-part color, explicit mm units, and the
+assembly manifest in metadata. It is native to Bambu Studio / PrusaSlicer. A
+fallback multi-STL (plus JSON manifest) export stays available for tools that do
+not read 3MF.
+
+Notes:
+
+- The in-app HD preview keeps using STL via Three's STLLoader: the format is
+  irrelevant for on-screen rendering (both are triangles), so there is no reason
+  to change it. The format choice only matters at export.
+- OpenSCAD can emit 3MF directly (`-o out.3mf` via lib3mf). Whether the vendored
+  2022.03.20 wasm build includes lib3mf must be verified when export is built; if
+  not, generate the 3MF in JS (manifold-3d or a lib3mf wasm).
+- True solid formats (STEP/BREP) are out of scope: they are not 3D-printing
+  formats and the whole pipeline (OpenSCAD, manifold) is mesh-based. Surface
+  smoothness is controlled by the OpenSCAD facet count (`$fn`), raised to a
+  default of 96 and overridable per call (lower for preview, higher for export).
+
+Consequences: Phase 6 in ROADMAP and the export flow in ARCHITECTURE now target
+3MF. No code change yet (export is Phase 5/6); the default `$fn` was raised to 96.

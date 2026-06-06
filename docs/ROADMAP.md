@@ -114,17 +114,20 @@ Testable objective: an oversized part (for example a long run or a big platform)
 is split into sub-parts that each fit the box, each cut gets a valid connector,
 and reassembling the sub-parts reproduces the original geometry within tolerance.
 
-## Phase 6: multi-STL export and manifest [ ]
+## Phase 6: 3MF export and manifest [ ]
 
 Tie the export flow together (see [ARCHITECTURE.md](./ARCHITECTURE.md)): validate
 the graph, generate all parts, run auto-split, validate every result is a clean
-manifold, emit one STL per printable part, and produce an assembly manifest
-describing which parts connect to which, in what order, with which connector and
-clocking. Package as a downloadable bundle. Project JSON save/load throughout.
+manifold, and emit a single **3MF** holding every printable part with its
+assembly position, a per-part color, and the assembly manifest (which parts
+connect to which, in what order, with which connector and clocking) in metadata.
+A fallback multi-STL export stays available for tools that do not read 3MF.
+Package as a downloadable bundle. Project JSON save/load throughout. See
+DECISIONS.md ADR-0012.
 
-Testable objective: a complete network exports to a set of STLs plus a manifest
-that, followed by hand, reassembles into the designed network; every STL is a
-valid manifold within the print box.
+Testable objective: a complete network exports to a 3MF (and optional STLs) plus
+a manifest that, followed by hand, reassembles into the designed network; every
+part is a valid manifold within the print box.
 
 ## Cross-cutting (ongoing)
 
