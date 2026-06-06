@@ -18,6 +18,7 @@
     "test:watch": "vitest",
     "lint": "eslint . --fix",
     "lint:check": "eslint .",
+    "fetch-wasm": "node scripts/fetch-openscad-wasm.mjs",
     "format": "prettier --write src/ docs/",
     "format:check": "prettier --check src/ docs/"
   },

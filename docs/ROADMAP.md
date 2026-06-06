@@ -77,7 +77,7 @@ port during a drag and, on drop, snaps into place and creates the connection. 71
 unit tests (8 for snapping geometry); the connected/valid state was verified in a
 real browser. See DECISIONS.md ADR-0010.
 
-## Phase 4: parametric OpenSCAD modules [ ]
+## Phase 4: parametric OpenSCAD modules [x]
 
 Bring up openscad-wasm in a Web Worker (see
 [research/openscad-wasm.md](./research/openscad-wasm.md)). Implement the `scad`
@@ -90,6 +90,16 @@ connector fit with printed coupons and lock the tolerances in
 Testable objective: each module type generates a valid, manifold mesh from its
 parameters in the worker, and a real printed male/female pair from two modules
 actually fits.
+
+Done (most of it): `src/domain/scad.ts` generates OpenSCAD source per module
+(port arms + hub, hollow bore, male outer-sleeve connector); unit tested.
+`src/workers/openscad.worker.ts` + `src/geometry/openscad.ts` run it in a Web
+Worker (`--enable=manifold`) and return STL. The HD preview (`Preview HD` in the
+inspector) renders the real mesh via Three's STLLoader. Verified in a real
+browser for straight and tee. The wasm is vendored by `pnpm fetch-wasm` (not
+committed). Still open and deferred: STL preview currently uses Three's STLLoader
+rather than manifold-3d validation/interop, and the connector tolerances still
+need physical coupon validation before being locked. See DECISIONS.md ADR-0011.
 
 ## Phase 5: auto-split [ ]
 

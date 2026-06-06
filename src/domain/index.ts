@@ -45,6 +45,9 @@ export type { Issue, IssueCode, Severity, ValidationReport } from './validate'
 export { computeSnap, occupiedPortKeys, openLocalPorts, openTargetPorts } from './snapping'
 export type { TargetPort, SnapResult } from './snapping'
 
+export { scadForModule, DEFAULT_CONNECTOR } from './scad'
+export type { ConnectorSpec } from './scad'
+
 export {
   serialize,
   deserialize,

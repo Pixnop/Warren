@@ -40,6 +40,7 @@ Requires Node 22+ and pnpm.
 
 ```sh
 pnpm install
+pnpm fetch-wasm   # download the openscad-wasm binaries into public/wasm/
 pnpm dev          # start the dev server
 pnpm test         # run unit tests
 pnpm type-check   # type-check the project
@@ -48,9 +49,9 @@ pnpm lint         # lint and auto-fix
 ```
 
 The openscad-wasm binaries are not committed; they are vendored into
-`public/wasm/` (gitignored). See
-[docs/research/openscad-wasm.md](docs/research/openscad-wasm.md). They are only
-needed once geometry generation lands (Phase 4).
+`public/wasm/` (gitignored) by `pnpm fetch-wasm`. See
+[docs/research/openscad-wasm.md](docs/research/openscad-wasm.md). They are needed
+for the HD preview and export (Phase 4 onward), not for the editor itself.
 
 ## Documentation
 

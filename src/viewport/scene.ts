@@ -45,6 +45,12 @@ export class Viewport {
   private readonly raycaster = new THREE.Raycaster()
   private readonly pointer = new THREE.Vector2()
   private readonly objects = new Map<string, ModuleObject>()
+  private readonly previews = new Map<string, THREE.Mesh>()
+  private readonly realMaterial = new THREE.MeshStandardMaterial({
+    color: 0xb8c0cc,
+    roughness: 0.5,
+    metalness: 0.05,
+  })
 
   private selectedId: string | null = null
   private snap: SnapResult | null = null
@@ -156,12 +162,15 @@ export class Viewport {
         // Keep the live transform while the user is dragging this one.
         applyTransform(existing.group, module.transform)
       }
+      const preview = this.previews.get(module.id)
+      if (preview !== undefined) applyTransform(preview, module.transform)
     }
     for (const [id, obj] of this.objects) {
       if (!seen.has(id)) {
         this.pickRoot.remove(obj.group)
         obj.dispose()
         this.objects.delete(id)
+        this.setRealMesh(id, null)
         if (this.selectedId === id) this.setSelected(null)
       }
     }
@@ -177,6 +186,32 @@ export class Viewport {
 
   setGizmoMode(mode: GizmoMode): void {
     this.gizmo.setMode(mode)
+  }
+
+  /** Show a real (OpenSCAD-generated) mesh in place of a module's proxy, or
+   *  clear it (geometry = null) to restore the proxy. */
+  setRealMesh(id: string, geometry: THREE.BufferGeometry | null): void {
+    const existing = this.previews.get(id)
+    if (existing !== undefined) {
+      this.pickRoot.remove(existing)
+      existing.geometry.dispose()
+      this.previews.delete(id)
+    }
+    const proxy = this.objects.get(id)
+    if (geometry === null) {
+      if (proxy !== undefined) proxy.group.visible = true
+      return
+    }
+    const mesh = new THREE.Mesh(geometry, this.realMaterial)
+    mesh.userData.moduleId = id
+    if (proxy !== undefined) {
+      mesh.position.copy(proxy.group.position)
+      mesh.quaternion.copy(proxy.group.quaternion)
+      mesh.scale.copy(proxy.group.scale)
+      proxy.group.visible = false
+    }
+    this.previews.set(id, mesh)
+    this.pickRoot.add(mesh)
   }
 
   /** During a drag: find a snap candidate and highlight its target port. */
@@ -215,6 +250,9 @@ export class Viewport {
     window.removeEventListener('resize', this.resize)
     for (const obj of this.objects.values()) obj.dispose()
     this.objects.clear()
+    for (const preview of this.previews.values()) preview.geometry.dispose()
+    this.previews.clear()
+    this.realMaterial.dispose()
     this.gizmo.dispose()
     this.orbit.dispose()
     this.renderer.dispose()

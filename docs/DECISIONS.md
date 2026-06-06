@@ -207,3 +207,35 @@ Decision:
 Consequences: the snap math is fully unit-tested independent of Three.js (the
 viewport glue stays thin). The snap radius (30 mm) and the single-key assumption
 are provisional and will be revisited with the real connector in Phase 4.
+
+## ADR-0011: Phase 4 OpenSCAD geometry
+
+Date: 2026-06-06. Status: accepted.
+
+Context: Phase 4 produces the real printable mesh via openscad-wasm.
+
+Decision:
+
+- SCAD generation is pure and framework-free (`src/domain/scad.ts`), unit
+  tested. Each module is the union of a central hub and one tube arm per port
+  (placed with `multmatrix` from the port frame), hollowed by a continuous bore.
+- Connector geometry is an outer sleeve on male ports: the mating female tube end
+  slips inside the male sleeve. This keeps the internal bore continuous and
+  smooth (better for the animal) and is a deviation from the spigot-into-socket
+  sketch in CONNECTOR_SPEC.md; the spec's mating frames and compatibility rule
+  are unchanged. Dimensions are provisional pending printed coupons.
+- openscad-wasm runs in a Web Worker (`src/workers/openscad.worker.ts`), lazy-
+  loading the vendored build from `/wasm/` on first use and returning STL bytes
+  as a transferable. The default single-threaded build needs no COOP/COEP.
+- The worker imports the loader via a full absolute URL built from the worker
+  origin, so Vite treats it as external and does not rewrite the specifier.
+- The wasm is vendored, not committed (ADR-0006). `pnpm fetch-wasm` downloads the
+  2022.03.20 release into `public/wasm/`.
+- HD preview parses the STL with Three's STLLoader into a BufferGeometry shown in
+  place of the proxy.
+
+Consequences: the full generate-render pipeline works in the browser (verified
+for straight and tee). Deferred: routing geometry through manifold-3d for
+validation and richer interop (Phase 5/6 need it for booleans and auto-split
+anyway); per-type geometry refinement (platform and cage_mount currently use the
+generic arm/hub model); and coupon-validating the connector clearance on the P1S.

@@ -5,6 +5,14 @@ cut depends on. If a module exposes a port, that port is one half of this
 connector. Get this right and modules compose freely; get it wrong and nothing
 fits.
 
+> Implementation note (Phase 4): the first generated geometry
+> ([../src/domain/scad.ts](../src/domain/scad.ts)) realizes the connector as an
+> outer sleeve on the male port that the mating female tube end slips inside,
+> rather than the spigot-into-socket sketch below. This keeps the internal bore
+> continuous and smooth. The mating frame convention and the compatibility rule
+> are unchanged. All dimensions remain provisional pending printed coupons. See
+> DECISIONS.md ADR-0011.
+
 This document is a design specification. The exact millimeter values below are
 proposed defaults to be validated with printed test coupons on the target
 printer before Phase 4 hardens them. Where a number is provisional it says so.

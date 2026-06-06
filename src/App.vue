@@ -10,6 +10,8 @@ import logo from './assets/logo.svg'
 const store = createEditorStore()
 const mode = ref<GizmoMode>('translate')
 
+const canvas = ref<{ previewSelected: () => void; clearPreview: () => void } | null>(null)
+
 // Dev-only affordance: expose the store on window for debugging and verification.
 if (import.meta.env.DEV) {
   ;(window as unknown as { warren?: unknown }).warren = store
@@ -46,10 +48,16 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
       <ModulePalette :store="store" />
     </aside>
     <main class="stage">
-      <ViewportCanvas :store="store" :mode="mode" />
+      <ViewportCanvas ref="canvas" :store="store" :mode="mode" />
     </main>
     <aside class="right">
-      <ModuleInspector :store="store" :mode="mode" @update:mode="mode = $event" />
+      <ModuleInspector
+        :store="store"
+        :mode="mode"
+        @update:mode="mode = $event"
+        @preview="canvas?.previewSelected()"
+        @clear-preview="canvas?.clearPreview()"
+      />
     </aside>
   </div>
 </template>

@@ -4,7 +4,11 @@ import type { EditorStore } from '../stores/editor'
 import type { GizmoMode } from '../viewport/scene'
 
 const props = defineProps<{ store: EditorStore; mode: GizmoMode }>()
-const emit = defineEmits<{ 'update:mode': [GizmoMode] }>()
+const emit = defineEmits<{
+  'update:mode': [GizmoMode]
+  preview: []
+  'clear-preview': []
+}>()
 
 const selected = computed(() => props.store.selectedModule.value)
 const report = computed(() => props.store.report.value)
@@ -41,6 +45,11 @@ function remove() {
         >
           Rotate
         </button>
+      </div>
+
+      <div class="geometry">
+        <button type="button" @click="emit('preview')">Preview HD</button>
+        <button type="button" @click="emit('clear-preview')">Clear</button>
       </div>
 
       <button type="button" class="danger" @click="remove">Delete</button>
@@ -89,10 +98,24 @@ h2 {
 code {
   color: #b9bec6;
 }
-.modes {
+.modes,
+.geometry {
   display: flex;
   gap: 0.4rem;
   margin: 0.6rem 0;
+}
+.geometry button {
+  flex: 1;
+  padding: 0.4rem;
+  border: 1px solid #2f343c;
+  border-radius: 6px;
+  background: #23272e;
+  color: #e6e8ec;
+  font: inherit;
+  cursor: pointer;
+}
+.geometry button:hover {
+  border-color: #fb815e;
 }
 .modes button {
   flex: 1;
