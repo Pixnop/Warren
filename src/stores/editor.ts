@@ -12,9 +12,11 @@ import {
   defaultParameters,
   serialize,
   validateProject,
+  type Connection,
   type Mat4,
   type Module,
   type ModuleType,
+  type PortRef,
   type Project,
   type ProjectSettings,
   type ValidationReport,
@@ -49,6 +51,7 @@ export interface EditorStore {
   removeModule(id: string): void
   selectModule(id: string | null): void
   setModuleTransform(id: string, transform: Mat4): void
+  addConnection(a: PortRef, b: PortRef): Connection
   toJSON(): string
 }
 
@@ -62,6 +65,12 @@ export function createEditorStore(initial?: Project): EditorStore {
     return match ? Math.max(max, Number(match[1])) : max
   }, 0)
   const nextId = () => `m${++counter}`
+
+  let connCounter = project.connections.reduce((max, c) => {
+    const match = /^c(\d+)$/.exec(c.id)
+    return match ? Math.max(max, Number(match[1])) : max
+  }, 0)
+  const nextConnId = () => `c${++connCounter}`
 
   function addModule(type: ModuleType, transform: Mat4 = IDENTITY): Module {
     const module: Module = {
@@ -92,6 +101,12 @@ export function createEditorStore(initial?: Project): EditorStore {
     if (module) module.transform = transform
   }
 
+  function addConnection(a: PortRef, b: PortRef): Connection {
+    const connection: Connection = { id: nextConnId(), a, b }
+    project.connections.push(connection)
+    return connection
+  }
+
   const selectedModule = computed<Module | null>(
     () => project.modules.find((m) => m.id === selectedId.value) ?? null,
   )
@@ -111,6 +126,7 @@ export function createEditorStore(initial?: Project): EditorStore {
     removeModule,
     selectModule,
     setModuleTransform,
+    addConnection,
     toJSON,
   }
 }

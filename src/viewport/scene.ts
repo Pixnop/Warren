@@ -12,16 +12,28 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { TransformControls } from 'three/addons/controls/TransformControls.js'
 import { applyTransform, buildModuleObject, readTransform, type ModuleObject } from './proxy'
-import type { Mat4, Module } from '../domain'
+import {
+  computeSnap,
+  openLocalPorts,
+  openTargetPorts,
+  type Mat4,
+  type Module,
+  type PortRef,
+  type Project,
+  type SnapResult,
+} from '../domain'
 
 export type GizmoMode = 'translate' | 'rotate'
 
 export interface ViewportCallbacks {
   onSelect(id: string | null): void
   onTransform(id: string, transform: Mat4): void
+  onConnect(a: PortRef, b: PortRef): void
+  getProject(): Project
 }
 
 const CLICK_SLOP = 4 // px of movement under which a pointerup counts as a click
+const SNAP_RADIUS = 30 // mm; how close a port must get to snap
 
 export class Viewport {
   private readonly renderer: THREE.WebGLRenderer
@@ -35,6 +47,7 @@ export class Viewport {
   private readonly objects = new Map<string, ModuleObject>()
 
   private selectedId: string | null = null
+  private snap: SnapResult | null = null
   private frame = 0
   private downX = 0
   private downY = 0
@@ -78,11 +91,15 @@ export class Viewport {
     this.gizmo.setMode('translate')
     this.gizmo.addEventListener('dragging-changed', (e) => {
       this.orbit.enabled = !e.value
+      if (e.value === false) this.commitSnap()
     })
     this.gizmo.addEventListener('objectChange', () => {
       if (this.selectedId === null) return
       const obj = this.objects.get(this.selectedId)
-      if (obj) this.callbacks.onTransform(this.selectedId, readTransform(obj.group))
+      if (obj === undefined) return
+      const live = readTransform(obj.group)
+      this.callbacks.onTransform(this.selectedId, live)
+      this.updateSnap(this.selectedId, live)
     })
     this.scene.add(this.gizmo.getHelper())
 
@@ -160,6 +177,34 @@ export class Viewport {
 
   setGizmoMode(mode: GizmoMode): void {
     this.gizmo.setMode(mode)
+  }
+
+  /** During a drag: find a snap candidate and highlight its target port. */
+  private updateSnap(movingId: string, live: Mat4): void {
+    const project = this.callbacks.getProject()
+    const snap = computeSnap(
+      live,
+      openLocalPorts(project, movingId),
+      openTargetPorts(project, movingId),
+      SNAP_RADIUS,
+    )
+    this.clearSnapHighlight()
+    if (snap !== null) this.objects.get(snap.target.moduleId)?.highlightPort(snap.target.portId)
+    this.snap = snap
+  }
+
+  /** On drop: if a snap candidate exists, snap into place and connect. */
+  private commitSnap(): void {
+    const snap = this.snap
+    this.snap = null
+    this.clearSnapHighlight()
+    if (snap === null || this.selectedId === null) return
+    this.callbacks.onTransform(this.selectedId, snap.transform)
+    this.callbacks.onConnect({ moduleId: this.selectedId, portId: snap.movingPortId }, snap.target)
+  }
+
+  private clearSnapHighlight(): void {
+    for (const obj of this.objects.values()) obj.highlightPort(null)
   }
 
   dispose(): void {

@@ -179,3 +179,31 @@ dependencies were added: `@types/three` (Three.js 0.184 does not bundle its own
 types) pinned to the matching `0.184.x` line, and the existing `jiti`. The
 production bundle is large (~640 KB, mostly Three.js); code-splitting/lazy-loading
 is deferred (the geometry wasm in Phase 4 will force the issue anyway).
+
+## ADR-0010: Phase 3 snapping model
+
+Date: 2026-06-06. Status: accepted.
+
+Context: Phase 3 makes connections by snapping ports while dragging.
+
+Decision:
+
+- Snapping is pure geometry in `src/domain/snapping.ts`. `computeSnap` finds the
+  nearest compatible open target within a radius and returns the moving module's
+  new transform `M' = W_target * Rx(pi) * inverse(P_moving)`. This places the
+  moving port at the target origin with +Z anti-parallel and +X (key) aligned,
+  the mating rule from CONNECTOR_SPEC.md.
+- Compatibility is one shared rule: `portsCompatible` was lifted out of the
+  validator so validation and snapping cannot diverge.
+- Rigid-transform inverse (`invertRigid`) is exact (transpose + `-R^T t`); all
+  our frames are rigid, so no general 4x4 inverse is needed.
+- The viewport computes the snap each drag frame using the live gizmo transform
+  and the domain helpers, highlights the candidate target port, and commits
+  (snap transform + `addConnection`) on drop. The connection is created only on
+  release, not mid-drag.
+- A dev-only `window.warren` store handle is exposed under `import.meta.env.DEV`
+  for debugging and verification; it is stripped from production builds.
+
+Consequences: the snap math is fully unit-tested independent of Three.js (the
+viewport glue stays thin). The snap radius (30 mm) and the single-key assumption
+are provisional and will be revisited with the real connector in Phase 4.

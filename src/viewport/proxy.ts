@@ -13,12 +13,15 @@ const BODY_COLOR = 0x9aa0a6
 const BODY_SELECTED = 0xfb815e
 const MALE_COLOR = 0xfb815e
 const FEMALE_COLOR = 0x33373e
+const PORT_HIGHLIGHT = 0x7fd18a
 
 const UP_Y = new THREE.Vector3(0, 1, 0)
 
 export interface ModuleObject {
   group: THREE.Group
   setSelected(on: boolean): void
+  /** Highlight one of this module's port markers (or null to clear). */
+  highlightPort(portId: string | null): void
   dispose(): void
 }
 
@@ -35,6 +38,7 @@ export function buildModuleObject(module: Module): ModuleObject {
 
   const ports = portsOf(module)
   const hubRadius = Math.max(...ports.map((p) => p.section.nominalSize / 2), 8)
+  const markers = new Map<string, { mesh: THREE.Mesh; base: number }>()
 
   for (const p of ports) {
     const pos = getTranslation(p.transform)
@@ -51,14 +55,13 @@ export function buildModuleObject(module: Module): ModuleObject {
       disposables.push(geo)
     }
 
+    const base = p.gender === 'male' ? MALE_COLOR : FEMALE_COLOR
     const markerGeo = new THREE.SphereGeometry(radius * 0.95, 16, 12)
-    const markerMat = new THREE.MeshStandardMaterial({
-      color: p.gender === 'male' ? MALE_COLOR : FEMALE_COLOR,
-      roughness: 0.5,
-    })
+    const markerMat = new THREE.MeshStandardMaterial({ color: base, roughness: 0.5 })
     const marker = new THREE.Mesh(markerGeo, markerMat)
     marker.position.copy(target)
     group.add(marker)
+    markers.set(p.id, { mesh: marker, base })
     disposables.push(markerGeo, markerMat)
   }
 
@@ -72,6 +75,13 @@ export function buildModuleObject(module: Module): ModuleObject {
     group,
     setSelected(on: boolean) {
       bodyMat.color.setHex(on ? BODY_SELECTED : BODY_COLOR)
+    },
+    highlightPort(portId: string | null) {
+      for (const [id, m] of markers) {
+        const on = id === portId
+        ;(m.mesh.material as THREE.MeshStandardMaterial).color.setHex(on ? PORT_HIGHLIGHT : m.base)
+        m.mesh.scale.setScalar(on ? 1.5 : 1)
+      }
     },
     dispose() {
       for (const d of disposables) d.dispose()

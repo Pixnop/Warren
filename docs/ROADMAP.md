@@ -56,7 +56,7 @@ browser (Playwright): add, select with gizmo, Move/Rotate, delete, with the live
 validation report reacting (a disconnected graph shows as a warning). 59 unit
 tests; type-check, lint, build all green. See DECISIONS.md ADR-0009.
 
-## Phase 3: port snapping [ ]
+## Phase 3: port snapping [x]
 
 Render open ports as pickable oriented markers. While dragging a module, find
 the nearest compatible open port (opposite gender, matching section), and when
@@ -68,6 +68,14 @@ graph. Honor connector compatibility (see [CONNECTOR_SPEC.md](./CONNECTOR_SPEC.m
 Testable objective: dragging one module's port near a compatible one creates a
 valid connection that passes all invariants including geometric coincidence;
 incompatible ports never snap.
+
+Done: `src/domain/snapping.ts` (`computeSnap` returns the nearest compatible mate
+within radius and the new module transform `M' = Wt*Rx(pi)*inv(Pm)`, plus open-
+port helpers), built on `invertRigid` in math and the shared `portsCompatible`.
+The store gained `addConnection`. The viewport highlights the candidate target
+port during a drag and, on drop, snaps into place and creates the connection. 71
+unit tests (8 for snapping geometry); the connected/valid state was verified in a
+real browser. See DECISIONS.md ADR-0010.
 
 ## Phase 4: parametric OpenSCAD modules [ ]
 

@@ -67,6 +67,26 @@ describe('editor store', () => {
     expect(s.selectedModule.value?.id).toBe(a.id)
   })
 
+  it('adds a connection with a unique id', () => {
+    const s = createEditorStore()
+    const a = s.addModule('straight')
+    const b = s.addModule('straight', translation([0, 0, 100]))
+    const c1 = s.addConnection({ moduleId: a.id, portId: 'b' }, { moduleId: b.id, portId: 'a' })
+    const c2 = s.addConnection({ moduleId: a.id, portId: 'a' }, { moduleId: b.id, portId: 'b' })
+    expect(s.project.connections.length).toBe(2)
+    expect(c1.id).not.toBe(c2.id)
+  })
+
+  it('a snapped, connected pair validates with no errors', () => {
+    const s = createEditorStore()
+    const a = s.addModule('straight')
+    // Placed so a.b (female, +Z at z=50) mates b.a (male, -Z at z=50).
+    const b = s.addModule('straight', translation([0, 0, 100]))
+    s.addConnection({ moduleId: a.id, portId: 'b' }, { moduleId: b.id, portId: 'a' })
+    expect(s.report.value.ok).toBe(true)
+    expect(s.report.value.errors).toEqual([])
+  })
+
   it('serializes to JSON that round-trips back to an equal project', () => {
     const s = createEditorStore()
     s.addModule('straight')

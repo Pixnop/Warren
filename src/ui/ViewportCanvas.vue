@@ -13,6 +13,8 @@ onMounted(() => {
   viewport = new Viewport(host.value, {
     onSelect: (id) => props.store.selectModule(id),
     onTransform: (id, t) => props.store.setModuleTransform(id, t),
+    onConnect: (a, b) => props.store.addConnection(a, b),
+    getProject: () => props.store.project,
   })
   viewport.syncModules(props.store.project.modules)
   viewport.setSelected(props.store.selectedId.value)

@@ -33,8 +33,17 @@ export {
 export type { ModuleDefinition } from './modules/definition'
 export type { ParamSchema, ParamSpec, ValidationResult } from './modules/schema'
 
-export { validateProject, POSITION_TOLERANCE, AXIS_TOLERANCE, SECTION_TOLERANCE } from './validate'
+export {
+  validateProject,
+  portsCompatible,
+  POSITION_TOLERANCE,
+  AXIS_TOLERANCE,
+  SECTION_TOLERANCE,
+} from './validate'
 export type { Issue, IssueCode, Severity, ValidationReport } from './validate'
+
+export { computeSnap, occupiedPortKeys, openLocalPorts, openTargetPorts } from './snapping'
+export type { TargetPort, SnapResult } from './snapping'
 
 export {
   serialize,

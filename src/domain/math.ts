@@ -79,6 +79,41 @@ export function multiply(a: Mat4, b: Mat4): Mat4 {
   return out as unknown as Mat4
 }
 
+/** Inverse of a rigid transform (rotation + translation, no scale/shear).
+ *  Inverse rotation is the transpose; inverse translation is -R^T t. */
+export function invertRigid(m: Mat4): Mat4 {
+  const r00 = at(m, 0),
+    r10 = at(m, 1),
+    r20 = at(m, 2)
+  const r01 = at(m, 4),
+    r11 = at(m, 5),
+    r21 = at(m, 6)
+  const r02 = at(m, 8),
+    r12 = at(m, 9),
+    r22 = at(m, 10)
+  const tx = at(m, 12),
+    ty = at(m, 13),
+    tz = at(m, 14)
+  return [
+    r00,
+    r01,
+    r02,
+    0,
+    r10,
+    r11,
+    r12,
+    0,
+    r20,
+    r21,
+    r22,
+    0,
+    -(r00 * tx + r10 * ty + r20 * tz),
+    -(r01 * tx + r11 * ty + r21 * tz),
+    -(r02 * tx + r12 * ty + r22 * tz),
+    1,
+  ]
+}
+
 /** Apply an affine matrix to a point (w = 1). */
 export function transformPoint(m: Mat4, [x, y, z]: Vec3): Vec3 {
   return [

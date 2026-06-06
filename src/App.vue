@@ -10,6 +10,11 @@ import logo from './assets/logo.svg'
 const store = createEditorStore()
 const mode = ref<GizmoMode>('translate')
 
+// Dev-only affordance: expose the store on window for debugging and verification.
+if (import.meta.env.DEV) {
+  ;(window as unknown as { warren?: unknown }).warren = store
+}
+
 function onKey(e: KeyboardEvent) {
   const target = e.target as HTMLElement | null
   if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return

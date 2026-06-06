@@ -6,6 +6,7 @@ import {
   rotationY,
   rotationZ,
   multiply,
+  invertRigid,
   transformPoint,
   getTranslation,
   getAxis,
@@ -84,6 +85,20 @@ describe('multiply', () => {
     const composed = transformPoint(world, p)
     const nested = transformPoint(parent, transformPoint(child, p))
     expect(vec3ApproxEqual(composed, nested)).toBe(true)
+  })
+})
+
+describe('invertRigid', () => {
+  it('composes with the original to the identity', () => {
+    const m = multiply(translation([10, -5, 3]), rotationZ(HALF_PI))
+    const id = multiply(m, invertRigid(m))
+    for (let i = 0; i < 16; i++) expect(id[i]).toBeCloseTo(IDENTITY[i] as number, 9)
+  })
+
+  it('maps a transformed point back to itself', () => {
+    const m = multiply(translation([1, 2, 3]), rotationX(HALF_PI))
+    const p: [number, number, number] = [4, 5, 6]
+    expect(vec3ApproxEqual(transformPoint(invertRigid(m), transformPoint(m, p)), p)).toBe(true)
   })
 })
 
