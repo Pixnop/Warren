@@ -269,3 +269,35 @@ Notes:
 
 Consequences: Phase 6 in ROADMAP and the export flow in ARCHITECTURE now target
 3MF. No code change yet (export is Phase 5/6); the default `$fn` was raised to 96.
+
+## ADR-0013: Auto-split strategy (model-level first)
+
+Date: 2026-06-06. Status: accepted.
+
+Context: Phase 5 splits oversized parts to fit the print box. Generic mesh-level
+splitting with a connector inserted at an arbitrary cut is hard: you must rebuild
+the universal connector on the cut cross-section, bore-aware, or the pieces will
+not reassemble.
+
+Decision:
+
+- Split the common case at the MODEL level, not the mesh level. An oversized
+  straight run becomes N collinear sub-straights joined by the existing universal
+  connector. The connector comes for free (it is the same one the editor uses),
+  the pieces reassemble exactly, and it is pure graph code (no WASM), so it is
+  fully unit-tested. `src/domain/split.ts` is the pure planner; `autosplit.ts`
+  does the straight decomposition; the store `splitModule` applies it and
+  reassigns the original's external connections to the chain ends.
+- Use manifold-3d for mesh VALIDATION now (the export gate): load the OpenSCAD
+  STL, build a Manifold, and report clean/non-empty + genus + bounding size. This
+  is the first real use of manifold-3d (ADR-0004) and is surfaced in the HD
+  preview. The STL is parsed with Three's STLLoader (robust for ASCII/binary),
+  then welded with `Mesh.merge()` before constructing the Manifold.
+- Defer mesh-level slab cutting (`trimByPlane`) for non-decomposable parts until
+  the connector geometry is coupon-validated and parts like the platform have a
+  real model. Butt cuts without a connector would not reassemble, so shipping
+  them now would be worse than not having them.
+
+Consequences: the working auto-split covers long runs (the dominant case) with
+real connectors and a valid, verified reassembly, and manifold-3d is in the stack
+for validation. The general mesh-cut case is a documented, deliberate gap.

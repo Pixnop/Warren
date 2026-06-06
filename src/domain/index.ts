@@ -48,6 +48,10 @@ export type { TargetPort, SnapResult } from './snapping'
 export { scadForModule, DEFAULT_CONNECTOR } from './scad'
 export type { ConnectorSpec } from './scad'
 
+export { usableExtent, exceedsBox, planCuts, pieceCount } from './split'
+export { splitStraight } from './autosplit'
+export type { SplitResult } from './autosplit'
+
 export {
   serialize,
   deserialize,

@@ -87,6 +87,40 @@ describe('editor store', () => {
     expect(s.report.value.errors).toEqual([])
   })
 
+  it('splits an oversized straight in place into a connected, valid chain', () => {
+    const s = createEditorStore()
+    const m = s.addModule('straight')
+    m.parameters.length = 600 // box usable is 244 -> 3 pieces
+    expect(s.splitModule(m.id)).toBe(true)
+    expect(s.project.modules.length).toBe(3)
+    expect(s.project.connections.length).toBe(2)
+    expect(s.report.value.ok).toBe(true)
+  })
+
+  it('does not split a straight that already fits', () => {
+    const s = createEditorStore()
+    const m = s.addModule('straight') // default length 100
+    expect(s.splitModule(m.id)).toBe(false)
+    expect(s.project.modules.length).toBe(1)
+  })
+
+  it('reassigns the original end connections to the chain ends when splitting', () => {
+    const s = createEditorStore()
+    const long = s.addModule('straight')
+    long.parameters.length = 600
+    const neighbor = s.addModule('straight', translation([0, 0, 350]))
+    // connect the long module's b to the neighbor's a
+    s.addConnection({ moduleId: long.id, portId: 'b' }, { moduleId: neighbor.id, portId: 'a' })
+    expect(s.splitModule(long.id)).toBe(true)
+    // 3 sub-pieces + neighbor = 4 modules; chain (2) + the external one (1) = 3 connections
+    expect(s.project.modules.length).toBe(4)
+    expect(s.project.connections.length).toBe(3)
+    // the external connection no longer references the removed module id
+    expect(
+      s.project.connections.some((c) => c.a.moduleId === long.id || c.b.moduleId === long.id),
+    ).toBe(false)
+  })
+
   it('serializes to JSON that round-trips back to an equal project', () => {
     const s = createEditorStore()
     s.addModule('straight')

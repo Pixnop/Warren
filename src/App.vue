@@ -12,6 +12,11 @@ const mode = ref<GizmoMode>('translate')
 
 const canvas = ref<{ previewSelected: () => void; clearPreview: () => void } | null>(null)
 
+function onSplit() {
+  const id = store.selectedId.value
+  if (id !== null) store.splitModule(id)
+}
+
 // Dev-only affordance: expose the store on window for debugging and verification.
 if (import.meta.env.DEV) {
   ;(window as unknown as { warren?: unknown }).warren = store
@@ -57,6 +62,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
         @update:mode="mode = $event"
         @preview="canvas?.previewSelected()"
         @clear-preview="canvas?.clearPreview()"
+        @split="onSplit"
       />
     </aside>
   </div>

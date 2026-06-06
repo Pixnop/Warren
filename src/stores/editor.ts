@@ -11,6 +11,7 @@ import {
   IDENTITY,
   defaultParameters,
   serialize,
+  splitStraight,
   validateProject,
   type Connection,
   type Mat4,
@@ -52,6 +53,9 @@ export interface EditorStore {
   selectModule(id: string | null): void
   setModuleTransform(id: string, transform: Mat4): void
   addConnection(a: PortRef, b: PortRef): Connection
+  /** Replace an oversized straight with a connected chain of sub-straights.
+   *  Returns true if a split was applied. */
+  splitModule(id: string): boolean
   toJSON(): string
 }
 
@@ -107,6 +111,31 @@ export function createEditorStore(initial?: Project): EditorStore {
     return connection
   }
 
+  function splitModule(id: string): boolean {
+    const module = project.modules.find((m) => m.id === id)
+    if (module === undefined) return false
+    const result = splitStraight(module, project.settings.printBox)
+    if (result === null) return false
+
+    const firstId = result.modules[0]!.id
+    const lastId = result.modules[result.modules.length - 1]!.id
+
+    // Reassign the original module's external connections to the chain ends:
+    // its 'a' port becomes the first piece, its 'b' port the last.
+    for (const c of project.connections) {
+      for (const ref of [c.a, c.b]) {
+        if (ref.moduleId === id) ref.moduleId = ref.portId === 'a' ? firstId : lastId
+      }
+    }
+
+    const index = project.modules.findIndex((m) => m.id === id)
+    if (index >= 0) project.modules.splice(index, 1)
+    project.modules.push(...result.modules)
+    project.connections.push(...result.connections)
+    if (selectedId.value === id) selectedId.value = firstId
+    return true
+  }
+
   const selectedModule = computed<Module | null>(
     () => project.modules.find((m) => m.id === selectedId.value) ?? null,
   )
@@ -127,6 +156,7 @@ export function createEditorStore(initial?: Project): EditorStore {
     selectModule,
     setModuleTransform,
     addConnection,
+    splitModule,
     toJSON,
   }
 }

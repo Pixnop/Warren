@@ -101,7 +101,7 @@ committed). Still open and deferred: STL preview currently uses Three's STLLoade
 rather than manifold-3d validation/interop, and the connector tolerances still
 need physical coupon validation before being locked. See DECISIONS.md ADR-0011.
 
-## Phase 5: auto-split [ ]
+## Phase 5: auto-split [x] (model-level; mesh-level cut deferred)
 
 A split planner that, for any part whose bounding box exceeds the print box
 (default 250 mm cube, configurable; see
@@ -113,6 +113,25 @@ sub-part inside the box.
 Testable objective: an oversized part (for example a long run or a big platform)
 is split into sub-parts that each fit the box, each cut gets a valid connector,
 and reassembling the sub-parts reproduces the original geometry within tolerance.
+
+Done: `src/domain/split.ts` (the pure planner) and `src/domain/autosplit.ts`
+(`splitStraight`) handle the common case at the MODEL level: an oversized straight
+run is replaced by N collinear sub-straights joined by the universal connector,
+so each cut gets a real connector and the chain reassembles exactly into the
+original. The store `splitModule` applies it (reassigning the original's external
+connections to the chain ends); an "Auto-split to fit" button drives it. manifold-3d
+is integrated for mesh validation (`src/workers/manifold.worker.ts` +
+`src/geometry/manifold.ts`): an OpenSCAD mesh is confirmed a clean, non-empty
+manifold with its topology and bounding size, shown in the HD preview. All
+unit-tested; verified in a real browser (600 mm run -> 3 connected 200 mm pieces,
+graph valid; a piece validates as a manifold, genus 1, fits the box). See
+DECISIONS.md ADR-0013.
+
+Deferred: mesh-level slab cutting with manifold `trimByPlane` for parts that
+cannot be decomposed at the model level (for example a big platform). The hard
+part is inserting the universal connector at an arbitrary mesh cut; butt cuts
+without a connector would not reassemble, so this waits until the connector
+geometry is coupon-validated and the platform has a real model.
 
 ## Phase 6: 3MF export and manifest [ ]
 

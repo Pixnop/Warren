@@ -3,6 +3,7 @@ import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { STLLoader } from 'three/addons/loaders/STLLoader.js'
 import { Viewport, type GizmoMode } from '../viewport/scene'
 import { renderScadToStl, disposeOpenscadWorker } from '../geometry/openscad'
+import { analyzeMesh, disposeManifoldWorker } from '../geometry/manifold'
 import { scadForModule } from '../domain'
 import type { EditorStore } from '../stores/editor'
 
@@ -10,8 +11,12 @@ const props = defineProps<{ store: EditorStore; mode: GizmoMode }>()
 
 const host = ref<HTMLDivElement | null>(null)
 const busy = ref(false)
+const meshInfo = ref<string | null>(null)
 let viewport: Viewport | null = null
 const loader = new STLLoader()
+
+const formatSize = (s: readonly [number, number, number]) =>
+  `${Math.round(s[0])} × ${Math.round(s[1])} × ${Math.round(s[2])}`
 
 onMounted(() => {
   if (host.value === null) return
@@ -44,6 +49,7 @@ onBeforeUnmount(() => {
   viewport?.dispose()
   viewport = null
   disposeOpenscadWorker()
+  disposeManifoldWorker()
 })
 
 /** Render the selected module's real OpenSCAD geometry and show it. */
@@ -53,10 +59,18 @@ async function previewSelected(): Promise<void> {
   const module = props.store.project.modules.find((m) => m.id === id)
   if (module === undefined) return
   busy.value = true
+  meshInfo.value = null
   try {
     const stl = await renderScadToStl(scadForModule(module))
-    const geometry = loader.parse(stl.buffer as ArrayBuffer)
-    viewport?.setRealMesh(id, geometry)
+    viewport?.setRealMesh(id, loader.parse(stl.buffer as ArrayBuffer))
+    try {
+      const report = await analyzeMesh(stl)
+      meshInfo.value = report.empty
+        ? '⚠ not a closed manifold'
+        : `✓ manifold · genus ${report.genus} · ${report.triangles.toLocaleString()} tris · ${formatSize(report.size)} mm`
+    } catch {
+      meshInfo.value = null
+    }
   } catch (e) {
     console.error('[warren] HD preview failed', e)
   } finally {
@@ -67,6 +81,7 @@ async function previewSelected(): Promise<void> {
 function clearPreview(): void {
   const id = props.store.selectedId.value
   if (id !== null) viewport?.setRealMesh(id, null)
+  meshInfo.value = null
 }
 
 defineExpose({ previewSelected, clearPreview, busy })
@@ -75,6 +90,7 @@ defineExpose({ previewSelected, clearPreview, busy })
 <template>
   <div ref="host" class="viewport">
     <div v-if="busy" class="busy">Generating geometry…</div>
+    <div v-if="meshInfo !== null" class="mesh-info">{{ meshInfo }}</div>
   </div>
 </template>
 
@@ -97,6 +113,19 @@ defineExpose({ previewSelected, clearPreview, busy })
   font:
     0.85rem system-ui,
     sans-serif;
+  pointer-events: none;
+}
+.mesh-info {
+  position: absolute;
+  bottom: 0.75rem;
+  left: 0.75rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 6px;
+  background: #1f2730cc;
+  color: #b9bec6;
+  font:
+    0.8rem ui-monospace,
+    monospace;
   pointer-events: none;
 }
 </style>

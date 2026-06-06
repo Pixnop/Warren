@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { usableExtent } from '../domain'
 import type { EditorStore } from '../stores/editor'
 import type { GizmoMode } from '../viewport/scene'
 
@@ -8,10 +9,18 @@ const emit = defineEmits<{
   'update:mode': [GizmoMode]
   preview: []
   'clear-preview': []
+  split: []
 }>()
 
 const selected = computed(() => props.store.selectedModule.value)
 const report = computed(() => props.store.report.value)
+
+const splittable = computed(() => {
+  const m = selected.value
+  if (m === null || m.type !== 'straight') return false
+  const max = Math.max(...usableExtent(props.store.project.settings.printBox))
+  return (m.parameters.length as number) > max
+})
 
 function remove() {
   if (selected.value !== null) props.store.removeModule(selected.value.id)
@@ -51,6 +60,10 @@ function remove() {
         <button type="button" @click="emit('preview')">Preview HD</button>
         <button type="button" @click="emit('clear-preview')">Clear</button>
       </div>
+
+      <button v-if="splittable" type="button" class="split" @click="emit('split')">
+        Auto-split to fit
+      </button>
 
       <button type="button" class="danger" @click="remove">Delete</button>
     </section>
@@ -116,6 +129,19 @@ code {
 }
 .geometry button:hover {
   border-color: #fb815e;
+}
+.split {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #3a4a5a;
+  border-radius: 6px;
+  background: #1f2730;
+  color: #8fbce6;
+  font: inherit;
+  cursor: pointer;
+}
+.split:hover {
+  border-color: #8fbce6;
 }
 .modes button {
   flex: 1;
